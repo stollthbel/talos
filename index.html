@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talos Capital - ZK-Powered Trading Journal</title>
+    <meta name="description" content="Quantified truth. ZK-powered. Built for Veritas.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'talos-purple': '#a855f7',
+                        'talos-blue': '#3b82f6',
+                        'talos-dark': '#0f0f0f',
+                        'talos-gray': '#1a1a1a'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #a855f7, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #a855f7, #3b82f6);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4);
+        }
+        
+        input::placeholder {
+            color: #9ca3af;
+        }
+        
+        .text-black {
+            color: #000000 !important;
+        }
+    </style>
+</head>
+<body class="bg-talos-dark text-white">
+    <div id="root"></div>
+    
+    <!-- React and Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/recharts@2.7.2/umd/Recharts.js"></script>
+    
+    <!-- Load and render the React app -->
+    <script type="text/babel">
+        // This would normally be in a separate file
+        // For now, we'll embed it here for simplicity
+        const { useState, useEffect } = React;
+        const { LineChart, Line, PieChart, Pie, Cell, Tooltip, Legend, XAxis, YAxis, CartesianGrid, ResponsiveContainer } = Recharts;
+        
+        // Your React component would go here
+        // This is a placeholder - in production, you'd load talos-frontend.jsx
+        
+        function App() {
+            return (
+                <div className="min-h-screen bg-talos-dark text-white p-8">
+                    <div className="text-center">
+                        <h1 className="text-4xl font-bold gradient-text mb-4">Talos Capital</h1>
+                        <p className="text-gray-400 mb-8">Quantified truth. ZK-powered. Built for Veritas.</p>
+                        <div className="glass-card p-6 max-w-md mx-auto rounded-xl">
+                            <p className="text-gray-300">React app loading...</p>
+                            <p className="text-sm text-gray-500 mt-2">
+                                Please ensure your backend is running on port 5000
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
