@@ -779,7 +779,35 @@ def sample(self, batch_size):
 
 def __len__(self):
     return len(self.buffer)
-```
+
+# ==================== PERFORMANCE TRACKING ====================
+class PerformanceTracker:
+    """Track and aggregate performance metrics across trading sessions."""
+    def __init__(self):
+        # Stores latest session results keyed by symbol
+        self.history = {}
+
+    def initialize(self):
+        """Reset the stored performance history (call at the start of a new session)."""
+        self.history = {}
+
+    def update_symbol_performance(self, symbol: str, session_results: dict):
+        """Persist performance metrics for a single symbol."""
+        self.history[symbol] = session_results
+
+    # --- Convenience helpers -------------------------------------------------
+    def total_pnl(self) -> float:
+        """Return aggregated PnL across all tracked symbols."""
+        total = 0.0
+        for sym, res in self.history.items():
+            trading = res.get('trading', {})
+            initial_val = trading.get('portfolio_values', [0])[0] if trading else 0.0
+            total += trading.get('final_portfolio_value', initial_val) - initial_val
+        return total
+
+    def total_trades(self) -> int:
+        """Return total number of executed trades across symbols."""
+        return sum(res.get('trading', {}).get('total_trades', 0) for res in self.history.values())
 
 # ==================== MAIN TRIDENT SYSTEM ====================
 
@@ -940,25 +968,32 @@ def simulate_live_trading(self, agent, env, duration_hours):
     }
 
 def generate_session_report(self, session_results):
-    """Generate comprehensive session report"""
-    print("\n" + "="*60)
+    """Generate comprehensive session report for the session."""
+    separator = "=" * 60
+    print("\n" + separator)
     print("📊 TRIDENT TRADING SESSION REPORT")
-    print("="*60)
-    
-    total_pnl = 0
+    print(separator)
+
+    total_pnl = 0.0
     total_trades = 0
-    
+
     for symbol, results in session_results.items():
-        trading_results = results['trading']
-        initial_value = self.initial_capital * self.portfolio_manager.hahn_universe[symbol]['target_weight']
-        final_value = trading_results['final_portfolio_value']
-        pnl = final_value - initial_value
-        pnl_pct = (pnl / initial_value) * 100
-        
+        trading = results['trading']
+        initial_val = self.initial_capital * self.portfolio_manager.hahn_universe[symbol]['target_weight']
+        final_val = trading['final_portfolio_value']
+        pnl = final_val - initial_val
+        pnl_pct = (pnl / initial_val) * 100 if initial_val else 0.0
+
         total_pnl += pnl
-        total_trades += trading_results['total_trades']
-        
+        total_trades += trading['total_trades']
+
         print(f"\n{symbol}:")
-        print(f"  Initial: ${initial_value:,.2f}")
-        print(f"
-```
+        print(f"  Initial: ${initial_val:,.2f}")
+        print(f"  Final:   ${final_val:,.2f}")
+        print(f"  PnL:     ${pnl:,.2f} ({pnl_pct:.2f}%)")
+        print(f"  Trades:  {trading['total_trades']}")
+
+    print("\n" + "-" * 60)
+    print(f"TOTAL PnL ACROSS PORTFOLIO: ${total_pnl:,.2f}")
+    print(f"TOTAL TRADES: {total_trades}")
+    print(separator + "\n")
