@@ -130,6 +130,19 @@ class YahooFinanceSource(DataSource):
             return self._get_fallback_data(symbol)
     
     def _get_fallback_data(self, symbol: str) -> Dict[str, Any]:
+        """Return fallback data when API fails"""
+        return {
+            'price': 100.0,
+            'volume': 1000.0,
+            'change_percent': 0.0,
+            'symbol': symbol,
+            'timestamp': datetime.now().isoformat(),
+            'high_24h': 101.0,
+            'low_24h': 99.0,
+            'avg_volume': 1000.0
+        }
+    
+    def _get_fallback_data(self, symbol: str) -> Dict[str, Any]:
         """Fallback data when API fails"""
         return {
             'price': 100.0 + hash(symbol) % 50,  # Pseudo-random price
@@ -144,17 +157,19 @@ class YahooFinanceSource(DataSource):
 
 class AlpacaDataSource(DataSource):
     """Alpaca Markets data source - Real-time, requires API key"""
-    
-    def __init__(self, symbol: str = 'SPY', api_key: str = None, secret_key: str = None, 
+     def __init__(self, symbol: str = 'SPY', api_key: Optional[str] = None, secret_key: Optional[str] = None,
                  base_url: str = 'https://paper-api.alpaca.markets'):
         super().__init__(symbol)
         self.api_key = api_key
         self.secret_key = secret_key
         self.base_url = base_url
-        self.headers = {
-            'APCA-API-KEY-ID': api_key,
-            'APCA-API-SECRET-KEY': secret_key
-        }
+        if api_key and secret_key:
+            self.headers = {
+                'APCA-API-KEY-ID': api_key,
+                'APCA-API-SECRET-KEY': secret_key
+            }
+        else:
+            self.headers = {}
         
     def get_historical_data(self, timeframe: str = '1Min', limit: int = 1000) -> List[Tick]:
         """Get historical bars from Alpaca"""
