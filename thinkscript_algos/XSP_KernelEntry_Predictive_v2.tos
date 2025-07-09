@@ -1,0 +1,303 @@
+# XSP_KernelEntry_Predictive_v2
+# Enhanced Kernel Entry System with Predictive Signal Generation
+# Designed to catch moves BEFORE they happen using advanced momentum analysis
+
+declare lower;
+
+input lookback = 20;
+input fastEMA = 8;
+input slowEMA = 21;
+input rsiLength = 14;
+input kernelLength = 5;
+input volumeThreshold = 1.5;
+input momentumThreshold = 0.002;
+
+# === CORE INDICATORS ===
+def vwapValue = vwap(period = AggregationPeriod.DAY);
+def fastEMAValue = ExpAverage(close, fastEMA);
+def slowEMAValue = ExpAverage(close, slowEMA);
+def rsiValue = RSI(length = rsiLength);
+def atr = Average(TrueRange(high, close, low), 14);
+
+# === ADVANCED KERNEL SYSTEM ===
+# Multi-timeframe kernel using weighted moving averages
+def kernelPrice1 = ExpAverage(close, kernelLength);
+def kernelPrice2 = ExpAverage(close, kernelLength * 2);
+def kernelPrice3 = ExpAverage(close, kernelLength * 3);
+
+# Composite kernel with momentum weighting
+def kernelComposite = (kernelPrice1 * 0.5) + (kernelPrice2 * 0.3) + (kernelPrice3 * 0.2);
+def kernelSlope = (kernelComposite - kernelComposite[1]) / kernelComposite[1];
+def kernelAcceleration = kernelSlope - kernelSlope[1];
+
+# === VOLUME ANALYSIS ===
+def avgVolume = Average(volume, 20);
+def volumeRatio = volume / avgVolume;
+def volumeThrust = volumeRatio > volumeThreshold;
+
+# === SUPPORT/RESISTANCE DYNAMICS ===
+def resistance = Highest(high, lookback)[1];
+def support = Lowest(low, lookback)[1];
+def midPoint = (resistance + support) / 2;
+
+# === MOMENTUM ZAP DETECTION ===
+# Multi-layer momentum analysis for catching breakouts BEFORE they happen
+def momentumLayer1 = (close - close[1]) / close[1];
+def momentumLayer2 = (close - close[3]) / close[3] / 3;
+def momentumLayer3 = (close - close[5]) / close[5] / 5;
+
+# Weighted momentum composite
+def momentumComposite = (momentumLayer1 * 0.6) + (momentumLayer2 * 0.3) + (momentumLayer3 * 0.1);
+def momentumAccelerating = momentumComposite > momentumComposite[1] and momentumComposite[1] > momentumComposite[2];
+
+# Volume-weighted momentum strength
+def volWeightedMomentum = momentumComposite * (volumeRatio / 2);
+def momentumZap = volWeightedMomentum > momentumThreshold and momentumAccelerating;
+
+# === CHEAP ENTRY DETECTION ===
+# Price distance from recent highs (looking for oversold bounces)
+def recentHigh = Highest(high, 10);
+def priceDiscountFromHigh = (recentHigh - close) / recentHigh;
+def cheapEntryLevel = priceDiscountFromHigh > 0.015; # 1.5% discount
+
+# RSI oversold but showing divergence (hidden strength)
+def rsiOversold = rsiValue < 35;
+def rsiRising = rsiValue > rsiValue[1] and rsiValue[1] > rsiValue[2];
+def rsiDivergence = rsiOversold and rsiRising;
+
+# === KERNEL PREDICTIVE SIGNALS ===
+# Leading indicators that predict momentum before it shows in price
+def kernelMomentum = kernelSlope > 0 and kernelAcceleration > 0;
+def kernelDivergence = kernelComposite > kernelComposite[1] and close <= close[1];
+
+# Price vs kernel analysis
+def priceAboveKernel = close > kernelComposite;
+def priceBelowKernelButRising = close < kernelComposite and close > close[1];
+
+# === ENTRY ALGORITHMS ===
+
+# MOMENTUM ZAP ENTRY - Catches explosive moves early
+def momentumZapEntry = 
+    momentumZap and
+    volumeThrust and
+    (close > fastEMAValue or kernelMomentum) and
+    (close > vwapValue or priceAboveKernel) and
+    kernelAcceleration > 0;
+
+# CHEAP ENTRY ALGORITHM - Finds discounted entries with hidden strength  
+def cheapEntry = 
+    cheapEntryLevel and
+    rsiDivergence and
+    kernelDivergence and
+    close > support * 1.001 and  # Just above support
+    volumeRatio > 0.8;  # Some volume confirmation
+
+# HYBRID ENTRY - Best of both worlds
+def hybridEntry = 
+    (momentumZapEntry or cheapEntry) and
+    fastEMAValue > slowEMAValue and  # Trend confirmation
+    close > (support + (resistance - support) * 0.2);  # Above lower 20%
+
+# === PREDICTIVE SCORING SYSTEM ===
+# Score each setup from 0-100
+def momentumScore = 
+    (if momentumZapEntry then 30 else 0) +
+    (if volWeightedMomentum > momentumThreshold * 1.5 then 20 else 0) +
+    (if kernelAcceleration > 0.001 then 15 else 0) +
+    (if close > vwapValue then 10 else 0) +
+    (if volumeRatio > 2.0 then 15 else 0) +
+    (if priceAboveKernel then 10 else 0);
+
+def cheapScore = 
+    (if cheapEntry then 30 else 0) +
+    (if priceDiscountFromHigh > 0.02 then 20 else 0) +
+    (if rsiDivergence then 25 else 0) +
+    (if kernelDivergence then 15 else 0) +
+    (if close > support * 1.002 then 10 else 0);
+
+def hybridScore = (momentumScore + cheapScore) / 2;
+
+# === ENTRY TIMING OPTIMIZATION ===
+# Wait for optimal entry within the setup
+def entryTiming = 
+    (hybridScore > 60) and
+    (close[1] < kernelComposite[1] and close > kernelComposite) or  # Kernel breakthrough
+    (rsiValue[1] < 30 and rsiValue > 35) or  # RSI recovery
+    (momentumComposite > momentumComposite[1] * 1.02);  # Momentum acceleration
+
+# === RISK MANAGEMENT ===
+def stopLoss = Min(support, close - (atr * 1.5));
+def takeProfit1 = close + (atr * 2.0);  # Quick profit
+def takeProfit2 = close + (atr * 4.0);  # Extended target
+def riskRewardRatio = (takeProfit1 - close) / (close - stopLoss);
+
+# === FINAL SIGNALS ===
+def buySignal = entryTiming and hybridScore > 70 and riskRewardRatio > 1.5;
+def strongBuySignal = entryTiming and hybridScore > 85 and momentumZapEntry and cheapEntry;
+
+# === PLOTS ===
+plot KernelComposite = kernelComposite;
+KernelComposite.SetDefaultColor(Color.CYAN);
+KernelComposite.SetLineWeight(2);
+
+plot MomentumZap = if momentumZapEntry then close else Double.NaN;
+MomentumZap.SetDefaultColor(Color.YELLOW);
+MomentumZap.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+
+plot CheapEntry = if cheapEntry then close * 0.999 else Double.NaN;
+CheapEntry.SetDefaultColor(Color.GREEN);
+CheapEntry.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+
+plot StrongBuy = if strongBuySignal then close else Double.NaN;
+StrongBuy.SetDefaultColor(Color.MAGENTA);
+StrongBuy.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+StrongBuy.SetLineWeight(4);
+
+plot HybridScorePlot = hybridScore;
+HybridScorePlot.SetDefaultColor(Color.WHITE);
+
+# Add background color for high probability zones
+AddCloud(if hybridScore > 80 then 100 else 0, 0, Color.GREEN, Color.CURRENT);
+AddCloud(if hybridScore > 60 and hybridScore <= 80 then 100 else 0, 0, Color.YELLOW, Color.CURRENT);
+
+# Labels for score
+AddLabel(yes, "Hybrid Score: " + hybridScore, if hybridScore > 80 then Color.GREEN else if hybridScore > 60 then Color.YELLOW else Color.RED);
+
+# Dynamic resistance/support based on volatility
+def dynamicResistance = resistance + (atr * 0.5);
+def dynamicSupport = support - (atr * 0.5);
+
+# === BREAKOUT PREDICTION LOGIC ===
+# Pre-breakout accumulation pattern
+def nearResistance = high >= resistance * 0.98 and high <= resistance * 1.02;
+def nearSupport = low <= support * 1.02 and low >= support * 0.98;
+
+# Momentum buildup detection
+def momentumBuildup = kernelSlope > momentumThreshold and kernelAcceleration > 0;
+def momentumFading = kernelSlope < -momentumThreshold and kernelAcceleration < 0;
+
+# Price compression (volatility squeeze)
+def priceRange = high - low;
+def avgRange = Average(priceRange, 10);
+def compression = priceRange < avgRange * 0.7;
+
+# === VWAP REGIME ANALYSIS ===
+def vwapSlope = (vwapValue - vwapValue[1]) / vwapValue[1];
+def aboveVWAP = close > vwapValue;
+def belowVWAP = close < vwapValue;
+def vwapMomentum = vwapSlope > 0.0005;
+def vwapWeakness = vwapSlope < -0.0005;
+
+# === EMA CLOUD ANALYSIS ===
+def emaCloudBull = fastEMAValue > slowEMAValue;
+def emaCloudBear = fastEMAValue < slowEMAValue;
+def emaCloudExpanding = AbsValue(fastEMAValue - slowEMAValue) > AbsValue(fastEMAValue[1] - slowEMAValue[1]);
+
+# === RSI DIVERGENCE DETECTION ===
+def rsiSlope = rsiValue - rsiValue[1];
+def priceSlope = close - close[1];
+def bullishDivergence = priceSlope < 0 and rsiSlope > 0 and rsiValue < 30;
+def bearishDivergence = priceSlope > 0 and rsiSlope < 0 and rsiValue > 70;
+
+# === PREDICTIVE LONG SIGNAL ===
+def longSetupBase = emaCloudBull and aboveVWAP and vwapMomentum;
+def longMomentumConfirm = momentumBuildup and kernelComposite > kernelComposite[2];
+def longVolumeConfirm = volumeThrust;
+def longTechnicalConfirm = rsiValue > 45 and rsiValue < 70;
+
+# Pre-breakout long conditions
+def longPreBreakout = nearResistance and compression and longMomentumConfirm;
+def longDivergencePlay = bullishDivergence and nearSupport;
+def longVWAPBounce = close crosses above vwapValue and longMomentumConfirm;
+
+# Master long signal
+def explosiveLongEntry = (longSetupBase and longMomentumConfirm and longVolumeConfirm and longTechnicalConfirm) or
+                         longPreBreakout or 
+                         longDivergencePlay or
+                         longVWAPBounce;
+
+# === PREDICTIVE SHORT SIGNAL ===
+def shortSetupBase = emaCloudBear and belowVWAP and vwapWeakness;
+def shortMomentumConfirm = momentumFading and kernelComposite < kernelComposite[2];
+def shortVolumeConfirm = volumeThrust;
+def shortTechnicalConfirm = rsiValue < 55 and rsiValue > 30;
+
+# Pre-breakdown short conditions
+def shortPreBreakdown = nearSupport and compression and shortMomentumConfirm;
+def shortDivergencePlay = bearishDivergence and nearResistance;
+def shortVWAPReject = close crosses below vwapValue and shortMomentumConfirm;
+
+# Master short signal
+def explosiveShortEntry = (shortSetupBase and shortMomentumConfirm and shortVolumeConfirm and shortTechnicalConfirm) or
+                          shortPreBreakdown or 
+                          shortDivergencePlay or
+                          shortVWAPReject;
+
+# === SIGNAL QUALITY SCORING ===
+def longQuality = (if longSetupBase then 0.25 else 0) +
+                  (if longMomentumConfirm then 0.25 else 0) +
+                  (if longVolumeConfirm then 0.25 else 0) +
+                  (if longTechnicalConfirm then 0.25 else 0);
+
+def shortQuality = (if shortSetupBase then 0.25 else 0) +
+                   (if shortMomentumConfirm then 0.25 else 0) +
+                   (if shortVolumeConfirm then 0.25 else 0) +
+                   (if shortTechnicalConfirm then 0.25 else 0);
+
+# === ENHANCED ENTRY TRIGGERS ===
+# Only trigger on high-quality setups with momentum confirmation
+def qualifiedLongEntry = explosiveLongEntry and longQuality >= 0.75;
+def qualifiedShortEntry = explosiveShortEntry and shortQuality >= 0.75;
+
+# === ADAPTIVE PRICE TARGETS ===
+def longTarget = close + (atr * 2);
+def shortTarget = close - (atr * 2);
+def stopLoss = atr * 1.5;
+
+# === PLOTS ===
+plot LongEntrySignal = if qualifiedLongEntry then longTarget else Double.NaN;
+LongEntrySignal.SetDefaultColor(Color.GREEN);
+LongEntrySignal.SetPaintingStrategy(PaintingStrategy.TRIANGLES);
+LongEntrySignal.SetLineWeight(3);
+
+plot ShortEntrySignal = if qualifiedShortEntry then shortTarget else Double.NaN;
+ShortEntrySignal.SetDefaultColor(Color.RED);
+ShortEntrySignal.SetPaintingStrategy(PaintingStrategy.TRIANGLES);
+ShortEntrySignal.SetLineWeight(3);
+
+# Support/Resistance levels
+plot ResistanceLevel = resistance;
+ResistanceLevel.SetDefaultColor(Color.DARK_RED);
+ResistanceLevel.SetStyle(Curve.LONG_DASH);
+
+plot SupportLevel = support;
+SupportLevel.SetDefaultColor(Color.DARK_GREEN);
+SupportLevel.SetStyle(Curve.LONG_DASH);
+
+# Kernel trend line
+plot KernelTrend = kernelComposite;
+KernelTrend.SetDefaultColor(Color.YELLOW);
+KernelTrend.SetLineWeight(2);
+
+# VWAP
+plot VWAPLine = vwapValue;
+VWAPLine.SetDefaultColor(Color.CYAN);
+VWAPLine.SetLineWeight(2);
+
+# Quality indicator
+plot QualityLong = if qualifiedLongEntry then longQuality * 100 else Double.NaN;
+QualityLong.SetDefaultColor(Color.LIGHT_GREEN);
+
+plot QualityShort = if qualifiedShortEntry then shortQuality * 100 else Double.NaN;
+QualityShort.SetDefaultColor(Color.LIGHT_RED);
+
+# === ALERTS ===
+Alert(qualifiedLongEntry, "XSP KERNEL LONG ENTRY", Alert.BAR, Sound.Chimes);
+Alert(qualifiedShortEntry, "XSP KERNEL SHORT ENTRY", Alert.BAR, Sound.Bell);
+
+# === LABELS ===
+AddLabel(qualifiedLongEntry, "LONG KERNEL ENTRY", Color.GREEN);
+AddLabel(qualifiedShortEntry, "SHORT KERNEL ENTRY", Color.RED);
+AddLabel(compression, "COMPRESSION", Color.YELLOW);
+AddLabel(momentumBuildup, "MOMENTUM+", Color.LIGHT_GREEN);
+AddLabel(momentumFading, "MOMENTUM-", Color.LIGHT_RED);

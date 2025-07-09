@@ -1,0 +1,8 @@
+FROM ocaml/opam:alpine
+
+WORKDIR /app
+COPY OCaml/ .
+
+RUN sudo apt update && sudo apt install -y ocaml
+
+CMD ["ocaml", "signalnet.ml"]

@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  stoll-ai:
+    build: .
+    ports:
+      - "8000:8000"   # API port
+      - "9090:9090"   # Metrics port
+    environment:
+      - STOLL_ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DB_PATH=/app/data/stoll_ai.db
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - stoll-network
+
+  stoll-ai-api:
+    build: .
+    command: ["python", "-m", "uvicorn", "stoll_api:app", "--host", "0.0.0.0", "--port", "8001"]
+    ports:
+      - "8001:8001"   # Separate API instance
+    environment:
+      - STOLL_ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - STOLL_API_PORT=8001
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - stoll-ai
+    networks:
+      - stoll-network
+
+  talos-backend:
+    build: .
+    command: ["python", "talos-backend.py"]
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DEBUG=false
+      - SECRET_KEY=${FLASK_SECRET_KEY:-your-flask-secret-key}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - stoll-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - stoll-ai-api
+      - talos-backend
+    restart: unless-stopped
+    networks:
+      - stoll-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - stoll-network
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+    networks:
+      - stoll-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - stoll-network
+
+networks:
+  stoll-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  prometheus-data:
+  grafana-data:

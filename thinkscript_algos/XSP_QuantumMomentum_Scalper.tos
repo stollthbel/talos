@@ -1,0 +1,107 @@
+# XSP_QuantumMomentum_Scalper
+# Ultra-fast scalping system using quantum momentum principles
+# Designed for 1-5 minute scalps with high win rate
+
+declare lower;
+
+input fastLength = 3;
+input slowLength = 8;
+input rsiLength = 9;
+input volumeMultiplier = 2.0;
+input atrMultiplier = 1.5;
+
+# === QUANTUM MOMENTUM CORE ===
+def quantumFast = ExpAverage(close, fastLength);
+def quantumSlow = ExpAverage(close, slowLength);
+def quantumDelta = quantumFast - quantumSlow;
+def quantumVelocity = quantumDelta - quantumDelta[1];
+def quantumAcceleration = quantumVelocity - quantumVelocity[1];
+
+# === MICRO STRUCTURE ANALYSIS ===
+def microTrend = close - close[3];
+def microMomentum = (close - open) / open * 100;
+def tickDirection = if close > close[1] then 1 else if close < close[1] then -1 else 0;
+def tickMomentum = Average(tickDirection, 5);
+
+# === VOLUME THRUST DETECTION ===
+def avgVolume = Average(volume, 10);
+def volumeThrust = volume > avgVolume * volumeMultiplier;
+def volumeMomentum = volume / volume[1];
+
+# === VOLATILITY REGIME ===
+def atr = Average(TrueRange(high, close, low), 14);
+def volatilityExpansion = atr > atr[5] * 1.2;
+def volatilityContraction = atr < atr[5] * 0.8;
+
+# === PRICE ACTION PATTERNS ===
+def insideBar = high < high[1] and low > low[1];
+def outsideBar = high > high[1] and low < low[1];
+def pinBar = (high - close) > (close - low) * 2 or (close - low) > (high - close) * 2;
+
+# === RSI MICRO DIVERGENCE ===
+def rsi = RSI(length = rsiLength);
+def rsiSlope = rsi - rsi[1];
+def priceSlope = close - close[1];
+def microBullDiv = priceSlope < 0 and rsiSlope > 0;
+def microBearDiv = priceSlope > 0 and rsiSlope < 0;
+
+# === SCALP LONG CONDITIONS ===
+def scalpLongMomentum = quantumVelocity > 0 and quantumAcceleration > 0;
+def scalpLongPrice = microTrend > 0 and microMomentum > 0;
+def scalpLongVolume = volumeThrust and volumeMomentum > 1.1;
+def scalpLongTechnical = rsi > 35 and rsi < 65 and tickMomentum > 0.2;
+
+def scalpLongEntry = scalpLongMomentum and scalpLongPrice and scalpLongVolume and scalpLongTechnical;
+
+# === SCALP SHORT CONDITIONS ===
+def scalpShortMomentum = quantumVelocity < 0 and quantumAcceleration < 0;
+def scalpShortPrice = microTrend < 0 and microMomentum < 0;
+def scalpShortVolume = volumeThrust and volumeMomentum > 1.1;
+def scalpShortTechnical = rsi > 35 and rsi < 65 and tickMomentum < -0.2;
+
+def scalpShortEntry = scalpShortMomentum and scalpShortPrice and scalpShortVolume and scalpShortTechnical;
+
+# === ENHANCED FILTERS ===
+def noScalpZone = volatilityContraction or (rsi > 70 or rsi < 30);
+def qualifiedLong = scalpLongEntry and !noScalpZone;
+def qualifiedShort = scalpShortEntry and !noScalpZone;
+
+# === DYNAMIC TARGETS ===
+def scalpTarget = atr * atrMultiplier;
+def longTarget = close + scalpTarget;
+def shortTarget = close - scalpTarget;
+
+# === PLOTS ===
+plot ScalpLong = if qualifiedLong then longTarget else Double.NaN;
+ScalpLong.SetDefaultColor(Color.LIME);
+ScalpLong.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+ScalpLong.SetLineWeight(4);
+
+plot ScalpShort = if qualifiedShort then shortTarget else Double.NaN;
+ScalpShort.SetDefaultColor(Color.MAGENTA);
+ScalpShort.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+ScalpShort.SetLineWeight(4);
+
+plot QuantumFastLine = quantumFast;
+QuantumFastLine.SetDefaultColor(Color.CYAN);
+
+plot QuantumSlowLine = quantumSlow;
+QuantumSlowLine.SetDefaultColor(Color.ORANGE);
+
+plot ZeroLine = 0;
+ZeroLine.SetDefaultColor(Color.GRAY);
+
+# === MOMENTUM HISTOGRAM ===
+plot MomentumHist = quantumDelta * 1000;
+MomentumHist.SetDefaultColor(if quantumDelta > 0 then Color.GREEN else Color.RED);
+MomentumHist.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+
+# === ALERTS ===
+Alert(qualifiedLong, "QUANTUM SCALP LONG", Alert.BAR, Sound.Ring);
+Alert(qualifiedShort, "QUANTUM SCALP SHORT", Alert.BAR, Sound.Bell);
+
+# === LABELS ===
+AddLabel(qualifiedLong, "SCALP LONG", Color.LIME);
+AddLabel(qualifiedShort, "SCALP SHORT", Color.MAGENTA);
+AddLabel(volumeThrust, "VOLUME THRUST", Color.YELLOW);
+AddLabel(volatilityExpansion, "VOL EXPANSION", Color.WHITE);

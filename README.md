@@ -1,53 +1,139 @@
-# Talos Capital - Phase 4/6 🏛️
+# Stoll AI - Multi-Agent Executive System 🤖
 
-**Quantified truth. ZK-powered. Built for Veritas.**
+**Production-ready AI orchestration platform for trading, SaaS, and personal operations.**
 
-A sophisticated trading journal with Zero-Knowledge proof integration, multi-user authentication, and Stripe-powered subscriptions.
+A comprehensive multi-agent system featuring specialized AI agents (SaaS CTO, CFO, COO, Security, Research) orchestrated by a central executive brain. Built for scalable deployment with Docker, monitoring, and real-time decision making.
 
-## ✨ Features
+## 🎯 System Overview
 
-### 🔐 Authentication & User Management
-- JWT-based secure authentication
-- Password hashing with SHA-256
-- User profiles with subscription tracking
-- Session management with 30-day expiration
+Stoll AI is a sophisticated multi-agent system designed to manage complex operations across multiple domains:
 
-### 💳 Stripe Integration
-- $20/month Pro subscription
-- Secure checkout sessions
-- Webhook handling for status updates
-- Automatic subscription management
+- **🏢 SaaS Management**: Automated deployment, scaling, and monitoring of SaaS products
+- **💰 Financial Operations**: Portfolio management, P&L reporting, and risk assessment  
+- **⚙️ Personal Operations**: Schedule management, task automation, and lifestyle optimization
+- **🔒 Security**: System monitoring, threat detection, and access control
+- **📊 Research**: Market analysis, sentiment tracking, and competitive intelligence
 
-### 🧪 Zero-Knowledge Proof Support
-- Cryptographic commitment storage
-- Privacy-preserving trade verification
-- ZK-SNARK/zk-STARK compatibility layer
-- Pro-tier exclusive features
+### Architecture
 
-### 📊 Advanced Analytics
-- PnL timeline visualization
-- Win/Loss breakdown charts
-- User-scoped trade data
-- Responsive data visualization
-
-### 🎨 Modern UI/UX
-- Dark theme with gradient accents
-- Responsive design
-- Glass morphism effects
-- Tailwind CSS styling
+- **Central Executive (CEO)**: Coordinates all agents and makes strategic decisions
+- **Specialized Agents**: Domain-specific AI agents with unique capabilities
+- **Message Broker**: Asynchronous communication between agents
+- **Memory Manager**: Persistent knowledge storage and retrieval
+- **REST API**: External control and monitoring interface
+- **Production Infrastructure**: Docker, Nginx, Redis, Prometheus, Grafana
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+
-- pip package manager
-- Stripe account (for payments)
+- Docker & Docker Compose
+- Python 3.11+
+- 4GB+ RAM recommended
 
-### Installation
+### One-Command Deployment
 
-1. **Clone & Setup**
-   ```bash
-   git clone <your-repo>
+```bash
+# Clone and deploy
+git clone <your-repo>
+cd talos
+./deploy.sh
+```
+
+The system will be available at:
+- **Main Interface**: http://localhost:80
+- **Stoll AI API**: http://localhost:8001  
+- **Talos Backend**: http://localhost:5000
+- **Grafana Dashboard**: http://localhost:3000
+- **Prometheus**: http://localhost:9091
+
+## 🏗️ Detailed Setup
+
+### 1. Environment Configuration
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit with your configuration
+nano .env
+```
+
+**Required Environment Variables:**
+```bash
+# Security
+JWT_SECRET=your-production-jwt-secret-here
+FLASK_SECRET_KEY=your-production-flask-secret-here
+
+# AI Services (Optional)
+OPENAI_API_KEY=your-openai-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+
+# Trading APIs (Optional)
+ALPACA_API_KEY=your-alpaca-key-here
+ALPACA_SECRET_KEY=your-alpaca-secret-here
+```
+
+### 2. Production Deployment
+
+```bash
+# Deploy all services
+./deploy.sh
+
+# Check system health
+python health_check.py
+
+# View logs
+./deploy.sh logs
+
+# Update deployment
+./deploy.sh update
+```
+
+### 3. Development Setup
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run in development mode
+python stoll_launcher.py --mode development
+
+# Run specific components
+python stoll_api.py              # REST API only
+python stoll_ai.py               # Core system only
+```
+
+## 🧠 Agent Capabilities
+
+### SaaS CTO Agent
+- **Service Deployment**: Automated Docker deployments
+- **Auto-scaling**: Dynamic resource adjustment
+- **Health Monitoring**: Real-time service health checks
+- **Performance Optimization**: Resource usage analysis
+
+### CFO Agent  
+- **P&L Reporting**: Comprehensive financial analysis
+- **Portfolio Management**: Risk assessment and optimization
+- **Tax Optimization**: Automated tax-loss harvesting
+- **Performance Attribution**: Detailed performance breakdown
+
+### COO Agent
+- **Schedule Management**: Calendar optimization
+- **Task Automation**: Routine task automation
+- **Home Management**: Smart home integration
+- **Productivity Analytics**: Personal efficiency tracking
+
+### Security Agent
+- **Threat Detection**: Real-time security monitoring
+- **Access Control**: Authentication and authorization
+- **Compliance Monitoring**: Regulatory compliance checks
+- **Incident Response**: Automated security responses
+
+### Research Agent
+- **Market Analysis**: Real-time market data processing
+- **Sentiment Analysis**: Social media and news sentiment
+- **Economic Indicators**: Macro-economic data analysis
+- **Competitive Intelligence**: Market research and analysis
    cd talos
    ```
 
